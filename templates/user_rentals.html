@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Your Rentals - Apcostays{% endblock %}
+
+{% block extrahead %}
+    <link rel="stylesheet" href="{% static 'css/browseall.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="container mt-5 ms-3">
+        {% if messages %}
+        <div class="alert alert-success">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <h3 class="browse">Your Rentals</h3>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for rental in rentals %}
+            <div class="col mb-5">
+                <div class="flat" style="cursor:pointer;" onclick="window.location.href='{% url 'rental_details' rental.id %}'">
+                    
+                    <!-- Display the first image or a default image -->
+                    <img class="flat-img" src="{% if rental.images.first %}/media/{{ rental.images.first.image.name }}{% else %}{% static 'images/flat.png' %}{% endif %}" alt="Rental Image">
+
+                    <div class="flat-tag">
+                        <h3 class="flat-title">
+                            {{ rental.title }} <span class="proptype">{{ rental.property_type }}</span>
+                        </h3>
+
+                        <!-- Show "Unverified" badge if not verified -->
+                        {% if not rental.verified %}
+                            <span class="badge unveri bg-warning text-dark">Unverified</span>
+                        {% endif %}
+
+                        <h2 class="flat-loc">
+                            <svg width="10" height="15" viewBox="0 0 12 15" fill="none">
+                                <path d="M6 14.8C8.5 12.7 12 8.4 12 6C12 2.7 9.3 0 6 0C2.7 0 0 2.7 0 6C0 8.4 3.5 12.7 6 14.8Z" fill="blue"/>
+                            </svg>
+                            {{ rental.location }}
+                        </h2>
+
+                        <div class="horiline3"></div>
+                        <div class="flat-price">
+                            <h3 class="flat-amount">₹ {{ rental.rent }} <span class="permonth">/ month</span></h3>
+                        </div>
+                    </div>
+
+                    <!-- Buttons for Edit & Delete -->
+                    <div class="d-flex justify-content-end mt-2" style="gap: 5px;">
+                        <a href="{% url 'editrental' rental.id %}" class="btn btn-primary btn-sm" onclick="event.stopPropagation();">Edit</a>
+                        <a href="#" class="btn btn-danger btn-sm delete-btn" 
+                            data-id="{{ rental.id }}" 
+                            data-title="{{ rental.title }}" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#deleteModal"
+                            onclick="event.stopPropagation();">
+                            Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+                <p>No rentals listed yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete the rental property "<span id="rentalTitle"></span>"? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <!-- Form for deletion -->
+                <form method="POST" id="deleteForm" action="{% url 'deleterental' 0 %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="rental_id" id="rental_id" value="">
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                </form>
+                
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log('JavaScript is loaded');  // Check if JS is running
+    
+        const deleteBtns = document.querySelectorAll('.delete-btn');
+        const deleteForm = document.getElementById('deleteForm');
+        const rentalTitleElement = document.getElementById('rentalTitle');
+        const rentalIdInput = document.getElementById('rental_id');
+    
+        deleteBtns.forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                console.log('Delete button clicked');  // Check if the delete button is being clicked
+                e.stopPropagation(); // Prevent navigation when clicking delete button
+    
+                const rentalId = btn.getAttribute('data-id');
+                const rentalTitle = btn.getAttribute('data-title');
+                
+                console.log("Rental ID:", rentalId); // Log the rental ID
+    
+                // Update modal with rental title
+                rentalTitleElement.textContent = rentalTitle;
+                
+                // Set the hidden input value
+                rentalIdInput.value = rentalId;
+                console.log("Hidden rental_id value:", rentalIdInput.value); // Log the hidden input value
+    
+                // Dynamically set the form's action URL to the correct delete URL
+                // Now setting the action properly
+                deleteForm.action = "{% url 'deleterental' 0 %}".replace('0', rentalId);
+                
+                console.log("Form action set to:", deleteForm.action); // Log the form action
+            });
+        });
+    });
+    
+    
+</script>
+
+{% endblock %}
+
+

@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}List Your Rental - Apcostays{% endblock %}
+{% block extrahead %}
+    <link rel="stylesheet" href="{% static 'css/listrental.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="logsincontainer mt-5"> 
+    <div class="wrapper">
+        <div class="title-text">
+            <div class="title">Advertise Your Rental</div>
+        </div>
+        <div class="form-container">
+            <div class="form-inner">
+                <form class="formc" method="POST" enctype="multipart/form-data" action="{% url 'listrental' %}">
+                    {% csrf_token %}
+                    
+                    <!-- Property Details -->
+                    <div class="field">
+                        <label for="propertyTitle" class="form-label">Property Title</label>
+                        <input type="text" id="propertyTitle" name="title" required>
+                    </div>
+                    <div class="field">
+                        <label for="propertyType" class="form-label">Property Type</label>
+                        <select id="propertyType" name="property_type" required>
+                            <option value="" selected disabled>Choose a type</option>
+                            <option value="Apartment">Apartment</option>
+                            <option value="House">House</option>
+                            <option value="Villa">Villa</option>
+                            <option value="Shared Room">Shared Room</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="rooms" class="form-label">Rooms</label>
+                        <input type="number" id="rooms" name="rooms" min="1" required>
+                    </div>
+                    <div class="field">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" id="location" name="location" required>
+                    </div>
+                
+                    <!-- Rental Information -->
+                    <div class="field">
+                        <label for="monthlyRent" class="form-label">Monthly Rent (₹)</label>
+                        <input type="number" id="monthlyRent" name="rent" required>
+                    </div>
+                    <div class="field">
+                        <label for="deposit" class="form-label">Security Deposit (₹)</label>
+                        <input type="number" id="deposit" name="deposit" required>
+                    </div>
+                    <div class="field">
+                        <label for="description" class="form-label">Property Description</label>
+                        <textarea id="description" name="description" rows="5">This property offers a spacious and well-maintained living space, combining modern design with comfort. Located in a prime neighborhood, it provides easy access to essential amenities such as shops, restaurants, and public transport. Ideal for individuals or families, this rental offers a peaceful yet convenient living experience, perfect for anyone looking for a comfortable home.</textarea>
+                    </div>
+                
+                    <!-- Image Upload -->
+                    <div class="field">
+                        <label for="propertyImages" class="form-label">Upload Images</label>
+                        <input class="form-control flatimgupload" type="file" id="propertyImages" name="images" multiple accept="image/*" onchange="previewImages()">
+                        <small class="text-muted">You can upload multiple images of your property.</small>
+                    
+                        <div id="imagePreviews" class="image-previews" style=" margin-top: 10px; display: none;">
+                            <!-- Selected images will be displayed here -->
+                            
+                        </div>
+                        
+                    </div>
+                
+                    <!-- Contact Details -->
+                    <div class="field">
+                        <label for="ownerName" class="form-label">Your Name</label>
+                        <input type="text" id="ownerName" name="owner_name" value="{{ owner_name }}" required readonly>
+                    </div>
+                    <div class="field">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" id="email" name="email" value="{{ email }}" readonly>
+                    </div>
+                    <div class="field">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" value="{{ phone }}" {% if phone %}readonly{% endif %} required>
+                    </div>
+                    
+
+                
+                    <!-- Submit Button -->
+                    <div class="field btn">
+                        <div class="btn-layer"></div>
+                        <input type="submit" value="Submit" >
+                    </div>
+                </form>                
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedFiles = []; // Array to store selected files
+
+    function previewImages() {
+        const previewContainer = document.getElementById('imagePreviews');
+        const input = document.getElementById('propertyImages');
+        const files = Array.from(input.files);
+
+        selectedFiles = [...files]; // Reset selected files list
+
+        previewContainer.innerHTML = ''; // Clear existing previews
+
+        if (selectedFiles.length === 0) {
+            previewContainer.style.display = 'none';
+            return;
+        }
+
+        previewContainer.style.display = 'block';
+
+        selectedFiles.forEach((file, index) => {
+            if (file && file.type.startsWith('image')) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const imageWrapper = document.createElement('div');
+                    imageWrapper.style.display = 'inline-block';
+                    imageWrapper.style.position = 'relative';
+                    imageWrapper.style.marginRight = '10px';
+                    imageWrapper.style.marginBottom = '10px';
+
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = 'Image Preview';
+                    img.style.width = '100px';
+                    img.style.height = '100px';
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.innerHTML = '×';
+                    removeBtn.style.position = 'absolute';
+                    removeBtn.style.top = '0';
+                    removeBtn.style.right = '0';
+                    removeBtn.style.backgroundColor = 'red';
+                    removeBtn.style.color = 'white';
+                    removeBtn.style.border = 'none';
+                    removeBtn.style.borderRadius = '50%';
+                    removeBtn.style.padding = '5px';
+                    removeBtn.style.fontSize = '14px';
+                    removeBtn.style.cursor = 'pointer';
+
+                    // Remove image from selection when 'X' is clicked
+                    removeBtn.onclick = function () {
+                        selectedFiles.splice(index, 1); // Remove from selected files
+                        updateFileInput(); // Update the file input
+                        previewImages(); // Refresh previews
+                    };
+
+                    imageWrapper.appendChild(img);
+                    imageWrapper.appendChild(removeBtn);
+                    previewContainer.appendChild(imageWrapper);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    function updateFileInput() {
+        const input = document.getElementById('propertyImages');
+        const dataTransfer = new DataTransfer();
+
+        selectedFiles.forEach(file => dataTransfer.items.add(file)); // Add remaining files
+
+        input.files = dataTransfer.files; // Update file input
+
+        // If no files are left, clear the input completely
+        if (selectedFiles.length === 0) {
+            input.value = ''; // Reset input box
+            document.getElementById('imagePreviews').style.display = 'none';
+        }
+    }
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const descriptionField = document.getElementById('description');
+        const defaultDescription = descriptionField.value.trim(); // Store the default description
+
+        descriptionField.addEventListener('focus', clearDescription);
+        
+        function clearDescription() {
+            // If the field still has the default description, clear it
+            if (descriptionField.value === defaultDescription) {
+                descriptionField.value = '';
+            }
+        }
+
+        // Optional: Restore the default description if the user leaves the field empty
+        descriptionField.addEventListener('blur', function() {
+            if (descriptionField.value.trim() === '') {
+                descriptionField.value = defaultDescription;
+            }
+        });
+    });
+</script>
+
+{% endblock %}

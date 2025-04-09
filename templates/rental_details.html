@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ rental.title }} - Apcostays{% endblock %}
+
+{% block extrahead %}
+    <link rel="stylesheet" href="{% static 'css/details.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container flat-container">
+    <div class="flat-head">
+        <div class="flat-title">{{ rental.title }}
+            <!-- Show "Unverified" badge if not verified -->
+            {% if not rental.verified %}
+            <span class="badge unveri bg-warning text-dark">Unverified &#x24D8;</span>
+        {% endif %}
+        </div>
+        <h2 class="flat-loc">{{ rental.location }} </h2>
+        
+    </div>
+
+    <div class="image-gallery">
+        <!-- Large Image -->
+        <div class="large-image">
+            <img id="mainImage" src="{% if images %}{{ images.0.image.url }}{% else %}{% static 'images/flat.png' %}{% endif %}" alt="Main Flat Image">
+        </div>
+    
+        <!-- Small Images -->
+        <div class="small-images">
+            {% for image in images %}
+                <img src="{{ image.image.url }}" alt="Flat Image {{ forloop.counter }}" onclick="changeImage(this)">
+            {% empty %}
+                <img src="{% static 'images/flat-2.png' %}" alt="Default Image">
+            {% endfor %}
+        </div>
+    </div>
+    
+    
+    
+
+    <div class="container flat-details">
+        <div class="points">
+            <button class="pointbtn">{{ rental.property_type }}</button>
+            <button class="pointbtn">{{ rental.rooms }} Rooms</button>
+        </div>
+        <div class="flat-price">
+            <h3 class="flat-amount">
+                <span class="rent"> Rent: </span>₹ {{ rental.rent }} <span class="permonth">/ month</span>
+            </h3>
+        </div>
+        <div class="discription">
+            <h3 class="flat-discription">Description</h3>
+            <p class="flat-discription">{{ rental.description }}</p>
+            <h3 class="sdeposit mb-3">Security Deposit: ₹ {{ rental.deposit }} </h3>
+        </div>
+        {% if rental.owner.UserID != request.session.user_id %}
+        <div class="dropdown">
+            <a class="login-button d-inline-block mt-3 mt-lg-0 log dropdown-toggle" href="#" role="button" id="contactDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Contact
+            </a>
+        
+            <ul class="dropdown-menu dropdown-menu-center" aria-labelledby="profileDropdown">
+                <li><h3 class="dropdown-item">{{ rental.owner.Name }}</h3></li>
+                <li><a class="dropdown-item" href="tel:{{ rental.owner.Phone }}">{{ rental.owner.Phone }}</a></li>
+                <li><a class="dropdown-item" href="mailto:{{ rental.owner.Email }}">{{ rental.owner.Email }}</a></li>
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="d-flex justify-content-end mt-2" style="gap: 5px;">
+        {% if rental.owner.UserID == request.session.user_id %}
+        <a href="{% url 'editrental' rental.id %}" class="btn btn-primary btn-sm">Edit</a>
+        <a href="#" class="btn btn-danger btn-sm delete-btn" 
+            data-id="{{ rental.id }}" 
+            data-title="{{ rental.title }}" 
+            data-bs-toggle="modal" 
+            data-bs-target="#deleteModal"
+            onclick="event.stopPropagation();">
+            Delete
+        </a>
+    {% endif %}
+
+    </div>
+</div>
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete the rental property "<span id="rentalTitle"></span>"? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <!-- Form for deletion -->
+                <form method="POST" id="deleteForm" action="{% url 'deleterental' rental.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    function changeImage(smallImg) {
+        let mainImage = document.getElementById("mainImage");
+        mainImage.src = smallImg.src;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const deleteBtns = document.querySelectorAll('.delete-btn');
+        const deleteForm = document.getElementById('deleteForm');
+        const rentalTitleElement = document.getElementById('rentalTitle');
+        
+        deleteBtns.forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                const rentalId = btn.getAttribute('data-id');
+                const rentalTitle = btn.getAttribute('data-title');
+                
+                // Update modal with rental title
+                rentalTitleElement.textContent = rentalTitle;
+                
+                // Dynamically set the form action URL to the correct delete URL
+                const deleteUrl = "{% url 'deleterental' 0 %}".replace('0', rentalId);
+                deleteForm.action = deleteUrl;
+            });
+        });
+    });
+</script>
+
+{% endblock %}
